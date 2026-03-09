@@ -5,7 +5,7 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 def main():
-    with open("books.csv") as fd:
+    with open("books.csv", encoding="utf-8") as fd:
         books_csv = csv.DictReader(fd)
         for book in books_csv:
             del book["bookID"]
