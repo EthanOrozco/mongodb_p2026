@@ -3,6 +3,7 @@ import argparse
 import logging
 import os
 import requests
+import json
 
 
 # Set logger
@@ -47,13 +48,26 @@ def get_book_by_id(id):
     else:
         print(f"Error: {response}")
 
-
-def update_book(id):
-    pass
-
+def update_book(id, data):
+    suffix = f"/books/{id}"
+    endpoint = BOOKS_API_URL + suffix
+    response = requests.put(endpoint, json=data)
+    if response.ok:
+        json_resp = response.json()
+        print_book(json_resp)
+    else:
+        log.error(f"Update failed [{response.status_code}] {response.text}")
+        print(f"Error: {response.status_code} - {response.text}")
 
 def delete_book(id):
-    pass
+    suffix = f"/books/{id}"
+    endpoint = BOOKS_API_URL + suffix
+    response = requests.delete(endpoint)
+    if response.ok:
+        print(f"Book deleted successfully (status: {response.status_code})")
+    else:
+        log.error(f"Delete failed [{response.status_code}] {response.text}")
+        print(f"Error: {response.status_code} - {response.text}")
 
 
 def main():
@@ -68,6 +82,8 @@ def main():
             help="Provide a book ID which related to the book action", default=None)
     parser.add_argument("-r", "--rating",
             help="Search parameter to look for books with average rating equal or above the param (0 to 5)", default=None)
+    parser.add_argument("-d", "--data",
+            help="JSON string with the book data to be updated. Only used for update action", default=None)
 
     args = parser.parse_args()
 
@@ -78,13 +94,17 @@ def main():
     if args.rating and args.action != "search":
         log.error(f"Rating arg can only be used with search action")
         exit(1)
+    if args.action == "update" and not args.data:
+        log.error(f"Action update requires data argument")
+        exit(1)
 
     if args.action == "search":
         list_books(args.rating)
     elif args.action == "get" and args.id:
         get_book_by_id(args.id)
     elif args.action == "update":
-        update_book(args.id)
+        data = json.loads(args.data)
+        update_book(args.id, data)
     elif args.action == "delete":
         delete_book(args.id)
 
